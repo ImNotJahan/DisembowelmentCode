@@ -49,12 +49,9 @@ public class Girl : MonoBehaviour
 
         if (recentlyUsedWords.Count > 10) recentlyUsedWords.RemoveAt(0); 
 
-        // Instantiate first so the full rotation chain (Girl × text local) is resolved,
-        // then read the instance's own axes — transform.up is visual up on screen,
-        // transform.forward is into/out of the screen face
-        EmittedText instance = Instantiate(textModel, transform.position - Vector3.forward * 0.1f, textModel.transform.rotation, transform);
+        // Not parented to the Girl: her non-uniform scale would skew the text when it rotates to face the camera
+        EmittedText instance = Instantiate(textModel, transform.position - Vector3.forward * 0.1f, transform.rotation * textModel.transform.rotation);
         instance.SetText(word);
-        instance.transform.localRotation = textModel.transform.rotation;
 
         Vector3 baseDir = Random.value > 0.5f ? instance.transform.up : -instance.transform.up;
         Vector3 dir     = Quaternion.AngleAxis(Random.Range(-spreadAngle, spreadAngle), instance.transform.forward) * baseDir;

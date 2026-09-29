@@ -10,12 +10,30 @@ public class EmittedText : MonoBehaviour
 
     [SerializeField] private float cursorFlashRate = 0.5f;
 
+    // Ignores depth so the text is never hidden behind the Girl
+    [SerializeField] private Shader overlayShader;
+
+    private static Material overlayMaterial;
+
     private Vector3 velocity;
     private string  word;
     private int     progress      = 0;
     private float   timeAlive     = 0;
     private float   cursorTimer   = 0;
     private bool    cursorVisible = false;
+    private Camera  cam;
+
+    void Awake()
+    {
+        cam = Camera.main;
+
+        if (overlayShader == null) return;
+
+        // Shared across all instances so each word doesn't allocate its own material
+        if (overlayMaterial == null) overlayMaterial = new Material(text.fontSharedMaterial) { shader = overlayShader };
+
+        text.fontSharedMaterial = overlayMaterial;
+    }
 
     public void SetText(string to)
     {
@@ -42,6 +60,18 @@ public class EmittedText : MonoBehaviour
         }
 
         HandleTyping();
+    }
+
+    void LateUpdate()
+    {
+        if (cam == null) return;
+
+        // Match the camera's yaw so the text stays parallel to the screen horizontally
+        Vector3 forward = cam.transform.forward;
+
+        forward.y = 0;
+
+        if (forward.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
     }
 
     private void HandleTyping()
