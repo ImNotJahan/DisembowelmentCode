@@ -4,8 +4,9 @@ using UnityEngine;
 public class camMovement : MonoBehaviour
 {
     [Header("Mouse Look Settings")]
-    [SerializeField] private float sensitivity = 2f;
-    [SerializeField] private float webSensitivityMultiplier = 0.15f;
+    // 1 = the point grabbed stays under the cursor. Scales with the camera's FOV, so zooming in slows the drag.
+    // Measured in cursor movement rather than raw mouse counts so it feels the same on Mac and Windows.
+    [SerializeField] private float dragMultiplier = 1f;
 
     [Header("Clamp Values")]
     [SerializeField] private float minPitch = -60f;
@@ -21,6 +22,8 @@ public class camMovement : MonoBehaviour
     private float pitch = 0f;
     private float yaw   = 0f;
 
+    private Vector3 lastMousePosition;
+
     private Camera cam;
 
     void Start()
@@ -33,13 +36,20 @@ public class camMovement : MonoBehaviour
     void Update()
     {
         // Look
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
         {
-            float effectiveSensitivity = sensitivity *
-                (Application.platform == RuntimePlatform.WebGLPlayer ? webSensitivityMultiplier : 1f);
+            lastMousePosition = Input.mousePosition;
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            Vector3 mouseDelta = Input.mousePosition - lastMousePosition;
+            lastMousePosition = Input.mousePosition;
 
-            float mouseX = -Input.GetAxis("Mouse X") * effectiveSensitivity;
-            float mouseY = -Input.GetAxis("Mouse Y") * effectiveSensitivity;
+            // The vertical FOV spans Screen.height pixels, so this is independent of resolution and Retina scaling
+            float degreesPerPixel = cam.fieldOfView / Screen.height * dragMultiplier;
+
+            float mouseX = -mouseDelta.x * degreesPerPixel;
+            float mouseY = -mouseDelta.y * degreesPerPixel;
 
             yaw   = Mathf.Clamp(yaw   + mouseX, minYaw,   maxYaw  );
             pitch = Mathf.Clamp(pitch - mouseY, minPitch, maxPitch);
